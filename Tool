@@ -1,0 +1,84 @@
+# Load necessary assemblies for Windows Forms
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+# Define applications, paths, and admin requirement
+$applications = @{
+    "SCCM client Center - Legacy Version"    = @{ "path" = "C:\Program Files\SCCM Tools\SCCM Client Center\SMSCliCtrV2.exe"; "admin" = $true }
+"Configuration Manager - SCCM"    = @{ "path" = "C:\Program Files (x86)\Microsoft Endpoint Manager\AdminConsole\bin\Microsoft.ConfigurationManagement.exe"; "admin" = $true }
+"PDQ Deploy"    = @{ "path" = "C:\Program Files (x86)\Admin Arsenal\PDQ Deploy\PDQDeployConsole.exe"; "admin" = $true }
+"PDQ Inventory"    = @{ "path" = "C:\Program Files (x86)\Admin Arsenal\PDQ Inventory\PDQInventoryConsole.exe"; "admin" = $true }
+"PowerShell"    = @{ "path" = "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"; "admin" = $true }
+"RDP / MSTSC"    = @{ "path" = "C:\WINDOWS\system32\mstsc.exe"; "admin" = $true }
+"Remote Control Viewer"    = @{ "path" = "C:\Program Files (x86)\Microsoft Endpoint Manager\AdminConsole\bin\i386\CmRcViewer.exe"; "admin" = $true }
+"AD Users and Computers (Legacy)"    = @{ "path" = "C:\WINDOWS\system32\dsa.msc"; "admin" = $true }
+"AD Administrative Centre (New)"    = @{ "path" = "C:\WINDOWS\system32\dsac.exe"; "admin" = $true }
+"Chrome Canary"    = @{ "path" = "C:\Users\fieldhoj\AppData\Local\Google\Chrome SxS\Application\chrome.exe"; "admin" = $false }
+"Chrome Canary (Incognito)"    = @{ "path" = "C:\Users\fieldhoj\AppData\Local\Google\Chrome SxS\Application\chrome.exe -incognito"; "admin" = $false }
+"One Note Instance 1"    = @{ "path" = "C:\Program Files (x86)\Microsoft Office\root\Office16\ONENOTE.EXE"; "admin" = $false }
+"One Note Instance 2"    = @{ "path" = "C:\Program Files (x86)\Microsoft Office\root\Office16\ONENOTE.EXE"; "admin" = $false }
+"VS Code"    = @{ "path" = "C:\Users\fieldhoj\AppData\Local\Programs\Microsoft VS Code\Code.exe"; "admin" = $false }
+    # Add more applications here
+}
+
+# Function to start an application
+function Start-App {
+    param (
+        [string]$path,
+        [bool]$admin
+    )
+    if ($admin) {
+        Start-Process -FilePath "powershell" -ArgumentList "Start-Process -FilePath '$path' -Verb RunAs" -WindowStyle Hidden
+    } else {
+        Start-Process -FilePath $path
+    }
+}
+
+# Function to update application status
+function Update-AppStatus {
+    $outputBox.Text = ""
+    foreach ($app in $applications.GetEnumerator()) {
+        $processName = [System.IO.Path]::GetFileNameWithoutExtension($app.Value.path)
+        $running = Get-Process -Name $processName -ErrorAction SilentlyContinue
+
+        if ($running) {
+            $outputBox.AppendText("$processName is running.`r`n")
+        } else {
+            $outputBox.AppendText("$processName is not running.`r`n")
+        }
+    }
+}
+
+# Function to perform the 'Refit' action
+function Refit-Windows {
+    # Placeholder for window positioning logic
+    $outputBox.AppendText("Refitting windows...`r`n")
+    # Add your window positioning logic here
+}
+
+# Create the main form
+$form = New-Object System.Windows.Forms.Form
+$form.Text = 'Application Status'
+$form.Size = New-Object System.Drawing.Size(400,300)
+$form.StartPosition = 'CenterScreen'
+
+# Create the output box
+$outputBox = New-Object System.Windows.Forms.TextBox
+$outputBox.Location = New-Object System.Drawing.Point(10,40)
+$outputBox.Size = New-Object System.Drawing.Size(360,200)
+$outputBox.MultiLine = $true
+$outputBox.ScrollBars = 'Vertical'
+$outputBox.ReadOnly = $true
+$form.Controls.Add($outputBox)
+
+# Create the Refit button
+$refitButton = New-Object System.Windows.Forms.Button
+$refitButton.Location = New-Object System.Drawing.Point(10,10)
+$refitButton.Size = New-Object System.Drawing.Size(75,23)
+$refitButton.Text = 'Refit'
+$refitButton.Add_Click({ Refit-Windows })
+$form.Controls.Add($refitButton)
+
+# Show the form
+$form.Add_Shown({ Update-AppStatus })
+$form.ShowDialog()
